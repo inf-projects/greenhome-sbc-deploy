@@ -6,7 +6,7 @@
 
 ```bash
 sudo apt update
-sudo apt install -y git feh vlc mpg321
+sudo apt install -y git feh vlc mpg321 unzip
 ```
 
 ### NVM

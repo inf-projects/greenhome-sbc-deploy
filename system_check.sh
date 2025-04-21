@@ -118,7 +118,6 @@ check_pm2_startup() {
     fi
 }
 
-
 # --- Script Execution ---
 echo "--- System Check Results ---"
 
@@ -139,10 +138,7 @@ check_pm2_startup "PM2 startup service"
 check_command "feh" "feh installation"
 check_command "vlc" "VLC installation"
 check_command "mpg321" "mpg321 installation"
+check_command "unzip" "unzip installation"
 
-echo "--------------------------"
-echo "Note: This check confirms the presence of executables and the active Node.js version."
-echo "The PM2 startup script requires a separate manual step after initial setup."
-echo "Refer to the initial setup script output for the exact command."
 echo "--------------------------"
 
