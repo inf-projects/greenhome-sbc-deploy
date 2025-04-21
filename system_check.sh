@@ -82,6 +82,42 @@ check_node_version() {
     fi
 }
 
+# Function to check if PM2 startup service is active and enabled (primarily for systemd)
+check_pm2_startup() {
+    local description="$1"
+    local service_name="pm2-$(whoami)" # PM2 service name typically includes the username
+
+    echo -n "Checking $description ('$service_name')... "
+
+    # Check if systemctl command exists (indicates systemd)
+    if command -v systemctl &> /dev/null; then
+        # Check if the service is active
+        if systemctl is-active --quiet "$service_name"; then
+            # Check if the service is enabled
+            if systemctl is-enabled --quiet "$service_name"; then
+                echo -e "${GREEN}${CHECKMARK}${NC} (Active and Enabled)"
+                return 0
+            else
+                echo -e "${RED}${CROSS}${NC} (Active but Disabled - will not start on boot)"
+                return 1
+            fi
+        else
+            # Service is not active, check if it's enabled anyway
+            if systemctl is-enabled --quiet "$service_name"; then
+                 echo -e "${RED}${CROSS}${NC} (Inactive but Enabled - might start on boot but not currently running)"
+                 return 1
+            else
+                 echo -e "${RED}${CROSS}${NC} (Inactive and Disabled - not running and will not start on boot)"
+                 return 1
+            fi
+        fi
+    else
+        # systemctl not found - cannot check systemd service status
+        echo -e "${RED}${CROSS}${NC} (Cannot check - systemctl command not found. Not a systemd system?)"
+        return 1
+    fi
+}
+
 
 # --- Script Execution ---
 echo "--- System Check Results ---"
@@ -95,6 +131,9 @@ check_node_version "$REQUIRED_NODE_MAJOR_VERSION" "Node.js version"
 
 check_command "yarn" "Yarn installation"
 check_command "pm2" "PM2 installation"
+
+# Perform check for PM2 startup service (systemd)
+check_pm2_startup "PM2 startup service"
 
 # Perform checks for additional applications
 check_command "feh" "feh installation"
