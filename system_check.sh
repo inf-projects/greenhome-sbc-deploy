@@ -96,6 +96,11 @@ check_node_version "$REQUIRED_NODE_MAJOR_VERSION" "Node.js version"
 check_command "yarn" "Yarn installation"
 check_command "pm2" "PM2 installation"
 
+# Perform checks for additional applications
+check_command "feh" "feh installation"
+check_command "vlc" "VLC installation"
+check_command "mpg321" "mpg321 installation"
+
 echo "--------------------------"
 echo "Note: This check confirms the presence of executables and the active Node.js version."
 echo "The PM2 startup script requires a separate manual step after initial setup."
