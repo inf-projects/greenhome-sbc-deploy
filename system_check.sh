@@ -15,6 +15,8 @@ CROSS='FAIL'
 
 # --- Configuration ---
 REQUIRED_NODE_MAJOR_VERSION="12"
+REQUIRED_PYTHON_MAJOR_VERSION="3"
+REQUIRED_PYTHON_MINOR_VERSION="9"
 NVM_DIR="$HOME/.nvm"
 
 # --- Check Functions ---
@@ -118,6 +120,59 @@ check_pm2_startup() {
     fi
 }
 
+# Function to check Python version (must be 3.9.x)
+check_python_version() {
+    REQUIRED_MAJOR=$1
+    REQUIRED_MINOR=$2
+    printf "Checking Python version (%s.%s.x)... " "$REQUIRED_MAJOR" "$REQUIRED_MINOR"
+
+    PYTHON_COMMAND=""
+    PYTHON_VERSION_OUTPUT=""
+
+    # Try to find python3.9 first
+    if command -v python3.9 &> /dev/null; then
+        PYTHON_COMMAND="python3.9"
+        PYTHON_VERSION_OUTPUT=$("$PYTHON_COMMAND" -V 2>&1)
+    # If python3.9 not found, try python3 and check its version
+    elif command -v python3 &> /dev/null; then
+        TEMP_PYTHON_VERSION_OUTPUT=$("python3" -V 2>&1)
+        TEMP_PYTHON_VERSION_NUM=$(echo "$TEMP_PYTHON_VERSION_OUTPUT" | awk '{print $2}')
+        TEMP_PYTHON_MAJOR=$(echo "$TEMP_PYTHON_VERSION_NUM" | cut -d '.' -f 1)
+        TEMP_PYTHON_MINOR=$(echo "$TEMP_PYTHON_VERSION_NUM" | cut -d '.' -f 2)
+
+        if [ "$TEMP_PYTHON_MAJOR" -eq "$REQUIRED_MAJOR" ] && [ "$TEMP_PYTHON_MINOR" -eq "$REQUIRED_MINOR" ]; then
+            PYTHON_COMMAND="python3"
+            PYTHON_VERSION_OUTPUT="$TEMP_PYTHON_VERSION_OUTPUT"
+        fi
+    fi
+
+    # If a suitable Python command was found
+    if [ -n "$PYTHON_COMMAND" ]; then
+        PYTHON_VERSION_NUM=$(echo "$PYTHON_VERSION_OUTPUT" | awk '{print $2}')
+
+        # Ensure version number is extracted before attempting to parse
+        if [ -z "$PYTHON_VERSION_NUM" ]; then
+             echo -e "${RED}${CROSS}${NC} (Could not parse Python version from output: $PYTHON_VERSION_OUTPUT)"
+             return 1
+        fi
+
+        PYTHON_MAJOR=$(echo "$PYTHON_VERSION_NUM" | cut -d '.' -f 1)
+        PYTHON_MINOR=$(echo "$PYTHON_VERSION_NUM" | cut -d '.' -f 2)
+
+        # Perform integer comparison, ensuring variables are treated as integers
+        if [ "$PYTHON_MAJOR" -eq "$REQUIRED_MAJOR" ] && [ "$PYTHON_MINOR" -eq "$REQUIRED_MINOR" ]; then
+            echo -e "${GREEN}${CHECKMARK}${NC} (Installed: $PYTHON_VERSION_NUM)"
+            return 0
+        else
+            echo -e "${RED}${CROSS}${NC} (Installed: $PYTHON_VERSION_NUM, Required: $REQUIRED_MAJOR.$REQUIRED_MINOR.x)"
+            return 1
+        fi
+    else
+        echo -e "${RED}${CROSS}${NC} (Python 3.9 not found)"
+        return 1
+    fi
+}
+
 # --- Script Execution ---
 echo "--- System Check Results ---"
 
@@ -133,6 +188,9 @@ check_command "pm2" "PM2 installation"
 
 # Perform check for PM2 startup service (systemd)
 check_pm2_startup "PM2 startup service"
+
+# Check Python version
+check_python_version "$REQUIRED_PYTHON_MAJOR_VERSION" "$REQUIRED_PYTHON_MINOR_VERSION"
 
 # Perform checks for additional applications
 check_command "feh" "feh installation"
