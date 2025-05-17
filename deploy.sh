@@ -1,14 +1,8 @@
 #!/bin/bash
 
 # --- Configuration ---
-# IMPORTANT: Replace with the actual URL of the zip file containing the build.
-DEPLOY_URL=https://github.com/inf-projects/greenhome-sbc-deploy/releases/download/v1.5.0-470710/sbc-server_1.5.0_470710.zip
-
 # The target directory where your application code will be deployed.
 TARGET_DIR="$HOME/sbc-server"
-
-# The name of the PM2 process will be read from the pm2.json file in the TARGET_DIR.
-# No need to set PM2_PROCESS_NAME here anymore.
 
 # Create a temporary directory for download and extraction
 TEMP_DIR=$(mktemp -d)
@@ -21,10 +15,23 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}--- Starting Deployment Script ---${NC}"
 
+# --- Get DEPLOY_URL from command line argument ---
+if [ -z "$1" ]; then
+    echo -e "${RED}FAIL${NC}: No deployment URL provided."
+    echo -e "${YELLOW}Usage: ./deploy.sh <YOUR_ZIP_FILE_DOWNLOAD_URL>${NC}"
+    # Clean up temp directory before exiting
+    echo -e "${YELLOW}Cleaning up temporary directory: ${TEMP_DIR}${NC}"
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
+
+# Assign the first command-line argument to DEPLOY_URL
+DEPLOY_URL="$1"
+
 # --- Note on Prerequisites ---
 # Prerequisites (curl, unzip, pm2, jq) should be checked using the separate
 # system_check.sh script before running this deployment script.
-echo -e "${YELLOW}Assuming prerequisites (curl, unzip, pm2, jq) are met (checked by system_check.sh).${NC}"
+echo -e "${YELLOW}Assuming prerequisites (curl, unzip, jq) are met (checked by system_check.sh). PM2 check is still recommended if your application uses it.${NC}"
 
 # --- Step 1: Ensure target directory exists ---
 echo -e "${YELLOW}Ensuring target directory exists: ${TARGET_DIR}${NC}"
@@ -103,30 +110,7 @@ echo -e "${YELLOW}Cleaning up temporary directory: ${TEMP_DIR}${NC}"
 rm -rf "$TEMP_DIR"
 echo -e "${GREEN}OK${NC}: Temporary directory cleaned."
 
-# --- Step 7: Determine PM2 Process Name from pm2.json and Restart/Start Service ---
-PM2_JSON_PATH="$TARGET_DIR/pm2.json"
-echo -e "${YELLOW}Determining PM2 process name from ${PM2_JSON_PATH}${NC}"
+echo -e "${YELLOW}--- Deployment Complete ---${NC}"
+echo -e "${YELLOW}NOTE: Code deployment is complete. Please restart your device for the changes to take effect and for PM2 to start the new version.${NC}"
 
-if [ -f "$PM2_JSON_PATH" ]; then
-    # Use jq to extract the 'name' field from pm2.json
-    # Assuming pm2.json is an array of processes, we'll take the name of the first one.
-    # If it's a single process object, jq '.name' will work.
-    # We'll try the array format first, then the object format.
-    # Added check for jq before using it
-    if command -v jq &> /dev/null; then
-        PM2_PROCESS_NAME=$(jq -r '.[0].name' "$PM2_JSON_PATH" 2>/dev/null)
-
-        # If the array format failed, try the single object format
-        if [ -z "$PM2_PROCESS_NAME" ] || [ "$PM2_PROCESS_NAME" = "null" ]; then
-            PM2_PROCESS_NAME=$(jq -r '.name' "$PM2_JSON_PATH" 2>/dev/null)
-        fi
-    else
-        echo -e "${RED}FAIL${NC}: 'jq' command not found. Cannot determine PM2 process name from pm2.json."
-        exit 1
-    fi
-
-
-    if [ -z "$PM2_PROCESS_NAME" ] || [ "$PM2_PROCESS_NAME" = "null" ]; then
-        echo -e "${RED}FAIL${NC}: Could not determine PM2 process name from ${PM2_JSON_PATH}. Make sure the 'name' field is present."
-        exit 1 # Exit with error code
-    end
+exit 0 # Exit successfully

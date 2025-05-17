@@ -71,3 +71,9 @@ Unzip build
 ```
 unzip sbc-server_*.zip -d sbc-server
 ```
+
+## Usage the script
+
+```bash
+
+```
