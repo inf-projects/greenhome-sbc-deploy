@@ -15,18 +15,20 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}--- Starting Deployment Script ---${NC}"
 
-# --- Get DEPLOY_URL from command line argument ---
-if [ -z "$1" ]; then
-    echo -e "${RED}FAIL${NC}: No deployment URL provided."
-    echo -e "${YELLOW}Usage: ./deploy.sh <YOUR_ZIP_FILE_DOWNLOAD_URL>${NC}"
+# --- Get DEPLOY_URL from environment variable or command line argument ---
+# Check if DEPLOY_URL environment variable is set
+if [ -n "$DEPLOY_URL" ]; then
+    echo -e "${YELLOW}Using DEPLOY_URL from environment variable.${NC}"
+    # DEPLOY_URL is already set
+else
+    echo -e "${RED}FAIL${NC}: No deployment URL provided via environment variable or command line argument."
+    echo -e "${YELLOW}Usage: export DEPLOY_URL=\"YOUR_URL\"; ./deploy.sh${NC}"
+    echo -e "${YELLOW}   OR: ./deploy.sh <YOUR_ZIP_FILE_DOWNLOAD_URL>${NC}"
     # Clean up temp directory before exiting
     echo -e "${YELLOW}Cleaning up temporary directory: ${TEMP_DIR}${NC}"
     rm -rf "$TEMP_DIR"
     exit 1
 fi
-
-# Assign the first command-line argument to DEPLOY_URL
-DEPLOY_URL="$1"
 
 # --- Note on Prerequisites ---
 # Prerequisites (curl, unzip, pm2, jq) should be checked using the separate
